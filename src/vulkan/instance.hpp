@@ -27,6 +27,8 @@ public:
 	void createCommandBuffer();
 	void createSwapChain();
 	void createDepthBuffer();
+	void initRenderPass();
+	void initFramebuffer();
 
 	const VkSampleCountFlagBits numSamples = VK_SAMPLE_COUNT_1_BIT;
 
@@ -46,8 +48,12 @@ public:
 	VkSwapchainKHR swapChain;
 	std::vector<BufferView> swapImages;
 	int curSwap = 0;
+	VkRenderPass renderPass;
 
+	VkFormat depthFormat;
 	VkImage depthImage;
 	VkDeviceMemory depthMem;
 	VkImageView depthView;
+
+	std::vector<VkFramebuffer> frameBuffers;
 };

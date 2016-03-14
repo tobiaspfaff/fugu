@@ -19,8 +19,8 @@ int main()
 	
 	Shader vert(inst.device, "simple.vert");
 	Shader frag(inst.device, "simple.frag");
-	DescriptorSet desc(inst.device);
-	desc.add(0, DescriptorSet::UniformBuffer, DescriptorSet::Vertex);
+	DescriptorSetLayout desc(inst.device);
+	desc.add(0, DescriptorSetLayout::UniformBuffer, DescriptorSetLayout::Vertex);
 	desc.create();
 	
 

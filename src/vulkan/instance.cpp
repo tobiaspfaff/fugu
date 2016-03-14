@@ -57,6 +57,8 @@ VulkanInstance::VulkanInstance(const string& appName, Window* wnd) :
 	createCommandBuffer();
 	createSwapChain();
 	createDepthBuffer();
+	initRenderPass();
+	initFramebuffer();
 }
 
 void VulkanInstance::enumerateDevices() 
@@ -323,7 +325,7 @@ void VulkanInstance::createSwapChain()
 void VulkanInstance::createDepthBuffer() {
 	VkImageCreateInfo imageInfo = {};
 
-	const VkFormat depthFormat = VK_FORMAT_D16_UNORM;
+	depthFormat = VK_FORMAT_D16_UNORM;
 
 	VkFormatProperties props;
 	vkGetPhysicalDeviceFormatProperties(gpu->physDevice, depthFormat, &props);
@@ -406,4 +408,82 @@ void VulkanInstance::createDepthBuffer() {
 	// Create image view
 	viewInfo.image = depthImage;
 	vkAssert(vkCreateImageView(device, &viewInfo, nullptr, &depthView), "depth view");
+}
+
+void VulkanInstance::initRenderPass() 
+{
+	// Need attachments for render target and depth buffer
+	VkAttachmentDescription attachments[2];
+	attachments[0].format = format;
+	attachments[0].samples = numSamples;
+	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachments[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	attachments[0].flags = 0;
+	
+	attachments[1].format = depthFormat;
+	attachments[1].samples = numSamples;
+	attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+	attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	attachments[1].flags = 0;
+
+	VkAttachmentReference colorReference = {};
+	colorReference.attachment = 0;
+	colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference depthReference = {};
+	depthReference.attachment = 1;
+	depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	VkSubpassDescription subpass = {};
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.flags = 0;
+	subpass.inputAttachmentCount = 0;
+	subpass.pInputAttachments = nullptr;
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &colorReference;
+	subpass.pResolveAttachments = nullptr;
+	subpass.pDepthStencilAttachment = &depthReference;
+	subpass.preserveAttachmentCount = 0;
+	subpass.pPreserveAttachments = nullptr;
+
+	VkRenderPassCreateInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	info.pNext = nullptr;
+	info.attachmentCount = 2;
+	info.pAttachments = attachments;
+	info.subpassCount = 1;
+	info.pSubpasses = &subpass;
+	info.dependencyCount = 0;
+	info.pDependencies = nullptr;
+
+	vkAssert(vkCreateRenderPass(device, &info, nullptr, &renderPass), "create render pass");
+}
+
+void VulkanInstance::initFramebuffer()
+{
+	for (auto& swap : swapImages) {
+		VkImageView attachments[2] = { swap.view, depthView };
+
+		VkFramebufferCreateInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		info.pNext = nullptr;
+		info.renderPass = renderPass;
+		info.attachmentCount = 2;
+		info.pAttachments = attachments;
+		info.width = wnd->width;
+		info.height = wnd->height;
+		info.layers = 1;
+		
+		VkFramebuffer buf;
+		vkAssert(vkCreateFramebuffer(device, &info, nullptr, &buf), "create framebuffer");
+		frameBuffers.push_back(buf);
+	}
 }
