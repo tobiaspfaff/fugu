@@ -34,9 +34,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 Window::Window(const string& name, int w, int h) :
 	width(w), height(h), impl(new Impl)
 {
-	wchar_t buffer[256];
-	size_t nlength = 0;
-	mbstowcs_s(&nlength, buffer, name.c_str(), name.size() + 1);
+	//tchar_t buffer[256];
+	//size_t nlength = 0;
+	//mbstowcs_s(&nlength, buffer, name.c_str(), name.size() + 1);
 	WNDCLASSEX winClass;
 	impl->hInst = GetModuleHandle(nullptr);
 
@@ -51,7 +51,7 @@ Window::Window(const string& name, int w, int h) :
 	winClass.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	winClass.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
 	winClass.lpszMenuName = nullptr;
-	winClass.lpszClassName = buffer;
+	winClass.lpszClassName = name.c_str();
 	winClass.hIconSm = LoadIcon(nullptr, IDI_WINLOGO);
 
 	// Register window class:
@@ -62,8 +62,8 @@ Window::Window(const string& name, int w, int h) :
 	RECT wr = { 0, 0, w, h };
 	AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
 	impl->hWnd = CreateWindowEx(0,
-		buffer,            // class name
-		buffer,            // app name
+		name.c_str(),            // class name
+		name.c_str(),            // app name
 		WS_OVERLAPPEDWINDOW | // window style
 		WS_VISIBLE | WS_SYSMENU,
 		100, 100,           // x/y coords
